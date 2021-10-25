@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import 'package:flutter_todo/data/todo.dart';
 import 'package:flutter_todo/data/utils.dart';
 import 'package:flutter_todo/todowrite.dart';
@@ -88,40 +89,23 @@ class _MyHomePageState extends State<MyHomePage> {
                 children: List.generate(undone.length, (index) {
                   Todo item = undone[index];
                   if (item.done == 0) {}
-                  return Container(
-                    decoration: BoxDecoration(
-                        color: Color(item.color),
-                        borderRadius: BorderRadius.circular(12)),
-                    margin: EdgeInsets.symmetric(vertical: 8, horizontal: 20),
-                    padding: EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              item.title,
-                              style: TextStyle(
-                                  fontSize: 18,
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                            Text(
-                              item.done == 0 ? "미완료" : "완료",
-                              style: TextStyle(color: Colors.white),
-                            )
-                          ],
-                        ),
-                        Container(
-                          height: 8,
-                        ),
-                        Text(
-                          item.memo,
-                          style: TextStyle(color: Colors.white),
-                        )
-                      ],
-                    ),
+                  return InkWell(
+                    child: TodoCardWidget(todo: item),
+                    onTap: () {
+                      setState(() {
+                        if (item.done == 0) {
+                          item.done = 1;
+                        } else {
+                          item.done = 0;
+                        }
+                      });
+                    },
+                    onLongPress: () {
+                      Navigator.of(context).push(MaterialPageRoute(
+                          builder: (builder) => TodoWrite(todo: item)));
+
+                      setState(() {}); // 상태값이 변경되면 호출
+                    },
                   );
                 }),
               ),
@@ -140,40 +124,23 @@ class _MyHomePageState extends State<MyHomePage> {
               child: Column(
                 children: List.generate(done.length, (index) {
                   Todo item = done[index];
-                  return Container(
-                    decoration: BoxDecoration(
-                        color: Color(item.color),
-                        borderRadius: BorderRadius.circular(12)),
-                    margin: EdgeInsets.symmetric(vertical: 8, horizontal: 20),
-                    padding: EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              item.title,
-                              style: TextStyle(
-                                  fontSize: 18,
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                            Text(
-                              item.done == 0 ? "미완료" : "완료",
-                              style: TextStyle(color: Colors.white),
-                            )
-                          ],
-                        ),
-                        Container(
-                          height: 8,
-                        ),
-                        Text(
-                          item.memo,
-                          style: TextStyle(color: Colors.white),
-                        )
-                      ],
-                    ),
+                  return InkWell(
+                    child: TodoCardWidget(todo: item),
+                    onTap: () {
+                      setState(() {
+                        if (item.done == 1) {
+                          item.done = 0;
+                        } else {
+                          item.done = 1;
+                        }
+                      });
+                    },
+                    onLongPress: () async {
+                      await Navigator.of(context).push(MaterialPageRoute(
+                          builder: (builder) => TodoWrite(todo: item)));
+
+                      setState(() {});
+                    },
                   );
                 }),
               ),
@@ -207,6 +174,53 @@ class _MyHomePageState extends State<MyHomePage> {
             todos.add(todo);
           });
         },
+      ),
+    );
+  }
+}
+
+class TodoCardWidget extends StatelessWidget {
+  final Todo todo;
+
+  TodoCardWidget({
+    Key key,
+    this.todo,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+          color: Color(todo.color), borderRadius: BorderRadius.circular(12)),
+      margin: EdgeInsets.symmetric(vertical: 8, horizontal: 20),
+      padding: EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                todo.title,
+                style: TextStyle(
+                    fontSize: 18,
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold),
+              ),
+              Text(
+                todo.done == 0 ? "미완료" : "완료",
+                style: TextStyle(color: Colors.white),
+              )
+            ],
+          ),
+          Container(
+            height: 8,
+          ),
+          Text(
+            todo.memo,
+            style: TextStyle(color: Colors.white),
+          )
+        ],
       ),
     );
   }

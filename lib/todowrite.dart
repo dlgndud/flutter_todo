@@ -18,6 +18,13 @@ class _TodoWriteState extends State<TodoWrite> {
   int categoryIdx = 0;
 
   @override
+  void initState() {
+    super.initState();
+    nameController.text = widget.todo.title;
+    memoController.text = widget.todo.memo;
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
