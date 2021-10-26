@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_todo/data/database.dart';
 import 'package:flutter_todo/data/todo.dart';
 
 class TodoWrite extends StatefulWidget {
@@ -14,6 +15,7 @@ class TodoWrite extends StatefulWidget {
 class _TodoWriteState extends State<TodoWrite> {
   TextEditingController nameController = TextEditingController();
   TextEditingController memoController = TextEditingController();
+  final dbHelper = DatabaseHelper.instance;
   int colorIdx = 0;
   int categoryIdx = 0;
 
@@ -31,10 +33,11 @@ class _TodoWriteState extends State<TodoWrite> {
           title: Text("등록"),
           actions: [
             TextButton(
-                onPressed: () {
+                onPressed: () async {
                   widget.todo.title = nameController.text;
                   widget.todo.memo = memoController.text;
 
+                  await dbHelper.insertTodo(widget.todo); // 입력이 완료될때까지 wait
                   Navigator.of(context).pop(widget.todo);
                 },
                 child: Text(
@@ -134,8 +137,8 @@ class _TodoWriteState extends State<TodoWrite> {
                 margin: EdgeInsets.symmetric(horizontal: 16, vertical: 0),
                 child: TextField(
                   controller: memoController,
-                  maxLines: 10,
-                  minLines: 10,
+                  maxLines: 5,
+                  minLines: 5,
                   decoration: InputDecoration(
                       border: OutlineInputBorder(
                           borderSide: BorderSide(color: Colors.black))),

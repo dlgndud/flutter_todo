@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import 'package:flutter_todo/data/database.dart';
 import 'package:flutter_todo/data/todo.dart';
 import 'package:flutter_todo/data/utils.dart';
 import 'package:flutter_todo/todowrite.dart';
@@ -32,33 +32,21 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  List<Todo> todos = [
-    Todo(
-        title: "패스트캠퍼스 강의듣기",
-        memo: "플러터 앱개발 강의",
-        color: Colors.redAccent.value,
-        done: 0,
-        category: "공부",
-        date: 20211101),
-    Todo(
-        title: "패스트캠퍼스 강의듣기",
-        memo: "VueJS 프런트앤드개발 강의",
-        color: Colors.blue.value,
-        done: 1,
-        category: "공부",
-        date: 20211101),
-    Todo(
-        title: "패스트캠퍼스 강의듣기",
-        memo: "TypeScript 프런트앤드개발 강의",
-        color: Colors.amber.value,
-        done: 1,
-        category: "공부",
-        date: 20211101)
-  ];
+  final dbHelper = DatabaseHelper.instance;
+
+  List<Todo> todos = [];
+
+  int selectedIndex = 0;
+
+  void getTodayTodo() async {
+    todos = await dbHelper.getTodoByDate(Utils.getFormatTime(DateTime.now()));
+    setState(() {});
+  }
 
   @override
   void initState() {
     super.initState();
+    getTodayTodo();
   }
 
   @override
@@ -71,84 +59,7 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
         preferredSize: Size.fromHeight(0),
       ),
-      body: ListView.builder(
-        // ListView를 빌더를 통해서 4개 생성
-        itemBuilder: (ctx, idx) {
-          if (idx == 0) {
-            return Container(
-                margin: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                child: Text(
-                  "오늘하루",
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
-                ));
-          } else if (idx == 1) {
-            List<Todo> undone =
-                todos.where((element) => element.done == 0).toList();
-            return Container(
-              child: Column(
-                children: List.generate(undone.length, (index) {
-                  Todo item = undone[index];
-                  if (item.done == 0) {}
-                  return InkWell(
-                    child: TodoCardWidget(todo: item),
-                    onTap: () {
-                      setState(() {
-                        if (item.done == 0) {
-                          item.done = 1;
-                        } else {
-                          item.done = 0;
-                        }
-                      });
-                    },
-                    onLongPress: () {
-                      Navigator.of(context).push(MaterialPageRoute(
-                          builder: (builder) => TodoWrite(todo: item)));
-
-                      setState(() {}); // 상태값이 변경되면 호출
-                    },
-                  );
-                }),
-              ),
-            );
-          } else if (idx == 2) {
-            return Container(
-                margin: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                child: Text(
-                  "완료된 항목",
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
-                ));
-          } else {
-            List<Todo> done =
-                todos.where((element) => element.done == 1).toList();
-            return Container(
-              child: Column(
-                children: List.generate(done.length, (index) {
-                  Todo item = done[index];
-                  return InkWell(
-                    child: TodoCardWidget(todo: item),
-                    onTap: () {
-                      setState(() {
-                        if (item.done == 1) {
-                          item.done = 0;
-                        } else {
-                          item.done = 1;
-                        }
-                      });
-                    },
-                    onLongPress: () async {
-                      await Navigator.of(context).push(MaterialPageRoute(
-                          builder: (builder) => TodoWrite(todo: item)));
-
-                      setState(() {});
-                    },
-                  );
-                }),
-              ),
-            );
-          }
-        },
-        itemCount: 4,
-      ),
+      body: getPage(),
       bottomNavigationBar: BottomNavigationBar(
         items: [
           BottomNavigationBarItem(icon: Icon(Icons.today), label: "오늘"),
@@ -156,26 +67,124 @@ class _MyHomePageState extends State<MyHomePage> {
               icon: Icon(Icons.assignment_outlined), label: "기록"),
           BottomNavigationBarItem(icon: Icon(Icons.more_horiz), label: "더보기")
         ],
+        currentIndex: selectedIndex,
+        onTap: (idx) {
+          setState(() {
+            selectedIndex = idx;
+          });
+        },
       ),
       floatingActionButton: FloatingActionButton(
         child: Icon(Icons.add),
         onPressed: () async {
           // 등록화면으로 이동
-          Todo todo = await Navigator.of(context).push(MaterialPageRoute(
+          await Navigator.of(context).push(MaterialPageRoute(
               builder: (builder) => TodoWrite(
-                  todo: new Todo(
+                  todo: Todo(
                       title: '',
                       color: 0,
                       memo: '',
                       done: 0,
                       category: '',
                       date: Utils.getFormatTime(DateTime.now())))));
-          setState(() {
-            todos.add(todo);
-          });
+
+          getTodayTodo();
         },
       ),
     );
+  }
+
+  Widget getPage() {
+    if (selectedIndex == 0) {
+      return getMain();
+    } else {
+      return getHistory();
+    }
+  }
+
+  Widget getMain() {
+    return ListView.builder(
+      // ListView를 빌더를 통해서 4개 생성
+      itemBuilder: (ctx, idx) {
+        if (idx == 0) {
+          return Container(
+              margin: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              child: Text(
+                "오늘하루",
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
+              ));
+        } else if (idx == 1) {
+          List<Todo> undone =
+              todos.where((element) => element.done == 0).toList();
+          return Container(
+            child: Column(
+              children: List.generate(undone.length, (index) {
+                Todo item = undone[index];
+                if (item.done == 0) {}
+                return InkWell(
+                  child: TodoCardWidget(todo: item),
+                  onTap: () {
+                    setState(() {
+                      if (item.done == 0) {
+                        item.done = 1;
+                      } else {
+                        item.done = 0;
+                      }
+                    });
+                  },
+                  onLongPress: () {
+                    Navigator.of(context).push(MaterialPageRoute(
+                        builder: (builder) => TodoWrite(todo: item)));
+
+                    setState(() {}); // 상태값이 변경되면 호출
+                  },
+                );
+              }),
+            ),
+          );
+        } else if (idx == 2) {
+          return Container(
+              margin: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              child: Text(
+                "완료된 항목",
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
+              ));
+        } else {
+          List<Todo> done =
+              todos.where((element) => element.done == 1).toList();
+          return Container(
+            child: Column(
+              children: List.generate(done.length, (index) {
+                Todo item = done[index];
+                return InkWell(
+                  child: TodoCardWidget(todo: item),
+                  onTap: () {
+                    setState(() {
+                      if (item.done == 1) {
+                        item.done = 0;
+                      } else {
+                        item.done = 1;
+                      }
+                    });
+                  },
+                  onLongPress: () async {
+                    await Navigator.of(context).push(MaterialPageRoute(
+                        builder: (builder) => TodoWrite(todo: item)));
+
+                    setState(() {});
+                  },
+                );
+              }),
+            ),
+          );
+        }
+      },
+      itemCount: 4,
+    );
+  }
+
+  Widget getHistory() {
+    return Container();
   }
 }
 

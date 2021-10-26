@@ -1,15 +1,15 @@
 import 'package:flutter_todo/data/todo.dart';
-import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import 'package:sqflite/sqflite.dart';
 
-class DataBaseHelper {
+class DatabaseHelper {
   static final _databaseName = "todo.db";
   static final _databaseVersion = 1;
   static final todoTable = "todo";
 
-  DataBaseHelper._privateConstructor();
+  DatabaseHelper._privateConstructor();
 
-  static final DataBaseHelper instance = DataBaseHelper._privateConstructor();
+  static final DatabaseHelper instance = DatabaseHelper._privateConstructor();
 
   static Database _database;
 
@@ -28,44 +28,44 @@ class DataBaseHelper {
 
   Future _onCreate(Database db, int version) async {
     await db.execute('''
-    CREATE TABLE IF NOT EXSITS $todoTable (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      date INTEGER DEFAULT 0,
-      title String,
-      memo String,
-      color INTEGER,
-      category String,
-      done INTEGER
-    )
-    ''');
+      CREATE TABLE IF NOT EXISTS $todoTable (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        date INTEGER DEFAULT 0,
+        done INTEGER DEFAULT 0,
+        title String,
+        memo String,
+        color INTEGER,
+        category String
+      )
+      ''');
   }
 
   Future _onUpgrade(Database db, int oldVersion, int newVersion) async {}
 
-  // todo create
-  // todo update
-  // todo read
-
+  // 투두 입력, 수정, 불러오기
   Future<int> insertTodo(Todo todo) async {
     Database db = await instance.database;
+
     if (todo.id == null) {
+      // 새로 추가
       Map<String, dynamic> row = {
         "title": todo.title,
         "date": todo.date,
+        "done": todo.done,
         "memo": todo.memo,
         "color": todo.color,
-        "category": todo.category,
-        "done": todo.done
+        "category": todo.category
       };
+
       return await db.insert(todoTable, row);
     } else {
       Map<String, dynamic> row = {
         "title": todo.title,
         "date": todo.date,
+        "done": todo.done,
         "memo": todo.memo,
         "color": todo.color,
-        "category": todo.category,
-        "done": todo.done
+        "category": todo.category
       };
 
       return await db
@@ -77,18 +77,21 @@ class DataBaseHelper {
     Database db = await instance.database;
     List<Todo> todos = [];
 
-    var query = await db.query(todoTable);
+    var queries = await db.query(todoTable);
+    print(queries);
 
-    for (var q in query) {
+    for (var q in queries) {
       todos.add(Todo(
-          id: q["id"],
-          title: q["title"],
-          date: q["date"],
-          memo: q["memo"],
-          color: q["color"],
-          category: q["category"],
-          done: q["done"]));
+        id: q["id"],
+        title: q["title"],
+        date: q["date"],
+        done: q["done"],
+        memo: q["memo"],
+        category: q["category"],
+        color: q["color"],
+      ));
     }
+
     return todos;
   }
 
@@ -96,18 +99,21 @@ class DataBaseHelper {
     Database db = await instance.database;
     List<Todo> todos = [];
 
-    var query = await db.query(todoTable, where: "date = ?", whereArgs: [date]);
+    var queries =
+        await db.query(todoTable, where: "date = ?", whereArgs: [date]);
 
-    for (var q in query) {
+    for (var q in queries) {
       todos.add(Todo(
-          id: q["id"],
-          title: q["title"],
-          date: q["date"],
-          memo: q["memo"],
-          color: q["color"],
-          category: q["category"],
-          done: q["done"]));
+        id: q["id"],
+        title: q["title"],
+        date: q["date"],
+        done: q["done"],
+        memo: q["memo"],
+        category: q["category"],
+        color: q["color"],
+      ));
     }
+
     return todos;
   }
 }
