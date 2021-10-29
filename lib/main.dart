@@ -3,6 +3,7 @@ import 'package:flutter_todo/data/database.dart';
 import 'package:flutter_todo/data/todo.dart';
 import 'package:flutter_todo/data/utils.dart';
 import 'package:flutter_todo/todowrite.dart';
+import 'package:get/get.dart';
 
 void main() {
   runApp(MyApp());
@@ -12,12 +13,18 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return GetMaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: MyHomePage(title: 'Flutter Demo Home Page'),
+      getPages: [
+        GetPage(
+            name: "/",
+            page: () => MyHomePage(
+                  title: 'MyHomePage',
+                )),
+      ],
     );
   }
 }
@@ -40,6 +47,11 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void getTodayTodo() async {
     todos = await dbHelper.getTodoByDate(Utils.getFormatTime(DateTime.now()));
+    setState(() {});
+  }
+
+  void getAllTodo() async {
+    alltodo = await dbHelper.getAllTodo();
     setState(() {});
   }
 
@@ -69,6 +81,10 @@ class _MyHomePageState extends State<MyHomePage> {
         ],
         currentIndex: selectedIndex,
         onTap: (idx) {
+          if (idx == 1) {
+            getAllTodo();
+          }
+
           setState(() {
             selectedIndex = idx;
           });
@@ -123,7 +139,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 if (item.done == 0) {}
                 return InkWell(
                   child: TodoCardWidget(todo: item),
-                  onTap: () {
+                  onTap: () async {
                     setState(() {
                       if (item.done == 0) {
                         item.done = 1;
@@ -131,6 +147,8 @@ class _MyHomePageState extends State<MyHomePage> {
                         item.done = 0;
                       }
                     });
+
+                    await dbHelper.insertTodo(item);
                   },
                   onLongPress: () {
                     Navigator.of(context).push(MaterialPageRoute(
@@ -158,7 +176,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 Todo item = done[index];
                 return InkWell(
                   child: TodoCardWidget(todo: item),
-                  onTap: () {
+                  onTap: () async {
                     setState(() {
                       if (item.done == 1) {
                         item.done = 0;
@@ -166,6 +184,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         item.done = 1;
                       }
                     });
+                    await dbHelper.insertTodo(item);
                   },
                   onLongPress: () async {
                     await Navigator.of(context).push(MaterialPageRoute(
@@ -183,8 +202,14 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
+  List<Todo> alltodo = [];
   Widget getHistory() {
-    return Container();
+    return ListView.builder(
+      itemBuilder: (ctx, idx) {
+        return TodoCardWidget(todo: alltodo[idx]);
+      },
+      itemCount: alltodo.length,
+    );
   }
 }
 
@@ -198,6 +223,9 @@ class TodoCardWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    int now = Utils.getFormatTime(DateTime.now());
+    DateTime time = Utils.numToDateTime(todo.date);
+
     return Container(
       decoration: BoxDecoration(
           color: Color(todo.color), borderRadius: BorderRadius.circular(12)),
@@ -228,7 +256,11 @@ class TodoCardWidget extends StatelessWidget {
           Text(
             todo.memo,
             style: TextStyle(color: Colors.white),
-          )
+          ),
+          now == todo.date
+              ? Container()
+              : Text("${time.month}월 ${time.day}일",
+                  style: TextStyle(color: Colors.white))
         ],
       ),
     );
